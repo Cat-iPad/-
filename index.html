@@ -1,0 +1,127 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KTS｜カイリーニョス追跡システム</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070b10;color:#eef4f8;font-family:system-ui,sans-serif}header{padding:18px 24px;background:#0d141c;border-bottom:1px solid #293641;position:sticky;top:0}.brand{font-weight:800;letter-spacing:.08em}.sub,.muted{color:#91a1ad;font-size:13px}main{max-width:1050px;margin:auto;padding:24px}.hero,.card{background:#0e151d;border:1px solid #2a3742;border-radius:15px;padding:18px;margin-bottom:14px}.hero{background:#101820}.status{display:inline-block;background:#12351f;color:#8ff0aa;padding:7px 11px;border-radius:99px;font-size:13px;font-weight:700}button{padding:10px 13px;border:1px solid #3a4b58;background:#16212a;color:#fff;border-radius:9px;cursor:pointer;margin-right:7px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.big{font-size:29px;font-weight:800}.alert{border-left:4px solid #ff5b5b}.warn{border-left:4px solid #ffc857}.badge{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700;background:#3a1717;color:#ff8585}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;border-bottom:1px solid #26323c;font-size:14px}.progress{height:9px;background:#1b2730;border-radius:10px;overflow:hidden}.bar{height:100%;width:72%;background:#ff6868}footer{max-width:1050px;margin:auto;padding:10px 24px 35px;color:#71808b;font-size:12px}@media(max-width:750px){.grid{grid-template-columns:1fr}main{padding:14px}}
+
+#map{height:430px;border-radius:12px;overflow:hidden;border:1px solid #2a3742;background:#111}
+.map-note{margin:10px 0;color:#91a1ad;font-size:13px}
+.location-status{margin-top:10px;padding:10px;border-radius:9px;background:#121c24}
+.leaflet-control-attribution{font-size:10px}
+</style><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+#map{height:420px;border-radius:14px;border:1px solid #2a3742;overflow:hidden}
+.loc-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.loc-status{padding:7px 10px;border-radius:8px;background:#16212a;color:#c7d4dc;font-size:13px}
+.coords{font-family:ui-monospace,monospace;font-size:13px;color:#aab8c2}
+</style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head><body>
+<header><div class="brand">KTS / Kairinyos Tracking System</div><div class="sub">カイリーニョス追跡システム｜対応センター管理ポータル</div></header>
+<main>
+<section class="hero"><span class="status">● SYSTEM ONLINE</span><h1>カイリーニョス追跡システム</h1><p class="muted">デバイス所有者に関連する場所へカイリーニョスが向かっている場合に通知します。</p><button onclick="simulate()">警報シミュレーション</button><button onclick="safe()">安全確認</button></section>
+<section id="notice" class="card alert"><h2>🚨 接近警報</h2><div class="big">カイリーニョス・ケレル</div><p>危険度：<span class="badge">4 / 5</span>　属性：追跡型・高速型</p><p>関連地点：<strong>登録地点「自宅」</strong></p><p class="muted">移動状況：接近中　｜　推定到着：18分</p><div class="progress"><div class="bar"></div></div></section>
+<div class="grid"><div class="card"><h2>📍 関連地点</h2><div class="big">3</div><p class="muted">現在地・登録地点・定期訪問地点</p></div><div class="card"><h2>🧬 監視個体</h2><div class="big">12</div><p class="muted">周辺で確認された個体</p></div><div class="card"><h2>🏢 推奨避難先</h2><div class="big">S級</div><p class="muted">対応センター三宮駅前</p></div></div>
+
+<section class="card">
+<h2>🗺️ 現在地・カイリーニョス位置情報</h2>
+<p class="map-note">位置情報の利用を許可すると、現在地を取得して地図上に表示します。</p>
+<button onclick="getLocation()">📍 現在地を取得</button>
+<button onclick="locateMe()">現在地へ移動</button>
+<div id="locationStatus" class="location-status">現在地：未取得</div>
+<div id="map"></div>
+</section>
+
+<section class="card">
+  <h2>🗺️ 現在地・カイリーニョス追跡マップ</h2>
+  <div class="loc-row">
+    <button id="locationButton" onclick="requestLocation()">📍 現在地を取得</button>
+    <span id="locStatus" class="loc-status">位置情報：待機中</span>
+    <span id="coords" class="coords"></span>
+  </div>
+  <div id="map"></div>
+  <p class="muted">このページを開いただけでは位置情報を取得しません。上のボタンを押したときだけ、ブラウザの位置情報許可を確認します。</p>
+</section>
+<section class="card"><h2>📡 周辺個体</h2><table><tr><th>個体</th><th>危険度</th><th>属性</th><th>状態</th></tr><tr><td>カイリーニョス・ケレル</td><td><span class="badge">4</span></td><td>追跡型 / 高速型</td><td>接近中</td></tr><tr><td>MARK 042</td><td><span class="badge">2</span></td><td>未判定</td><td>監視中</td></tr><tr><td>MARK 117</td><td><span class="badge">1</span></td><td>—</td><td>移動中</td></tr></table></section>
+<section class="card"><h2>🏢 対応センター</h2><p><strong>三宮駅前 S級</strong> — 緊急対応可能</p><p class="muted">全面アルミ構造・電波遮断区画・KTS監視室・個体解析室・緊急指令室</p><p><strong>C～A級：</strong>平常時はネットカフェ、PC、ドリンクバー、休憩スペースを全面無料で利用可能。</p></section>
+<section class="card"><h2>🔔 通知履歴</h2><ul><li>09:12　接近通知を発令</li><li>09:14　個体識別：カイリーニョス・ケレル</li><li>09:15　危険度を3→4へ更新</li><li>09:16　三宮駅前S級を推奨避難先に設定</li></ul></section>
+</main><footer>KTS DEMO｜架空設定のシステム画面です。</footer>
+<script>
+function simulate(){
+ const n=document.getElementById("notice");
+ n.className="card warn";
+ n.innerHTML='<h2>⚠️ 警報シミュレーション</h2><div class="big">MARK 024</div><p>危険度：<span class="badge">2 / 5</span>　属性：未判定</p><p>関連地点：<strong>登録地点「学校」</strong></p><p class="muted">移動状況：監視中　｜　推定到着：31分</p>';
+}
+function safe(){
+ const n=document.getElementById("notice");
+ n.className="card";
+ n.innerHTML='<h2>🟢 安全確認</h2><div class="big">現在、緊急警報はありません。</div><p class="muted">関連地点への危険度3以上の接近は確認されていません。</p>';
+}
+
+/* 地図は表示するだけ。位置情報はここでは取得しない。 */
+const map = L.map('map').setView([34.6901, 135.1955], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+let userMarker = null;
+let accuracyCircle = null;
+
+/* この関数は「現在地を取得」ボタンを押した時だけ呼ばれる */
+function requestLocation(){
+  const status = document.getElementById('locStatus');
+  const coords = document.getElementById('coords');
+  const button = document.getElementById('locationButton');
+
+  if (!navigator.geolocation) {
+    status.textContent = '位置情報：このブラウザは非対応';
+    return;
+  }
+
+  status.textContent = '位置情報：ブラウザの許可を確認中…';
+  coords.textContent = '';
+  button.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy);
+
+      status.textContent = '位置情報：取得成功';
+      coords.textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}（精度 約${acc}m）`;
+
+      if (userMarker) map.removeLayer(userMarker);
+      if (accuracyCircle) map.removeLayer(accuracyCircle);
+
+      userMarker = L.marker([lat, lon]).addTo(map)
+        .bindPopup('<strong>📍 現在地</strong><br>KTSが今回の操作で取得した位置')
+        .openPopup();
+
+      accuracyCircle = L.circle([lat, lon], {
+        radius: acc,
+        weight: 1,
+        fillOpacity: 0.08
+      }).addTo(map);
+
+      map.setView([lat, lon], 15);
+      button.disabled = false;
+    },
+    function(err){
+      const messages = {
+        1: '位置情報：許可されていません',
+        2: '位置情報：現在地を取得できませんでした',
+        3: '位置情報：取得がタイムアウトしました'
+      };
+      status.textContent = messages[err.code] || '位置情報：取得に失敗しました';
+      coords.textContent = '';
+      button.disabled = false;
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
+</script>
+</body></html>
